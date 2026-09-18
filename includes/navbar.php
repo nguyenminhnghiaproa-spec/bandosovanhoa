@@ -102,6 +102,19 @@ $currentPage =
                 </a>
 
 
+                <!-- HÀNH TRÌNH KHÁM PHÁ -->
+
+                <a
+                    class="nav-link
+                    <?= $currentPage === 'journey'
+                        ? 'active fw-semibold'
+                        : '' ?>"
+                    href="/bandosovanhoa/journey.php"
+                >
+                    🌿 Hành trình
+                </a>
+
+
                 <!-- BẢN ĐỒ -->
 
                 <a
