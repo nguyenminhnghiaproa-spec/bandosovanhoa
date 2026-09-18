@@ -20,3 +20,19 @@ footer{background:var(--hl-950)!important}
 .page-header,.location-header{background:linear-gradient(135deg,var(--hl-950),var(--hl-800),var(--hl-700))!important;border-radius:24px!important;box-shadow:0 18px 45px rgba(8,31,23,.16)!important}
 .info-card{border-radius:22px!important}.info-item,.qr-box{background:var(--hl-50)!important;border:1px solid rgba(18,60,44,.07)!important}.event-card{border-radius:18px!important}.gallery-image,#map{border-radius:16px!important}
 @media(max-width:767px){.hero{min-height:auto!important;padding:70px 0 105px!important}.hero h1{font-size:40px!important}.navbar .nav-link{margin:3px 0}.stats-section{margin-top:-45px!important}}
+
+
+/* Homepage - khu vuc kham pha them */
+.home-more-section{position:relative;background:linear-gradient(180deg,#f5f9f6 0%,#eaf3ed 100%);overflow:hidden}
+.home-more-section:before{content:"";position:absolute;width:420px;height:420px;border-radius:50%;background:rgba(29,90,66,.06);left:-210px;top:40px}
+.home-feature-card{position:relative;z-index:1;display:flex;gap:20px;height:100%;padding:30px;border-radius:24px;background:rgba(255,255,255,.92);border:1px solid rgba(18,60,44,.08);box-shadow:0 12px 34px rgba(8,31,23,.08);color:var(--ink);transition:.28s}
+.home-feature-card:hover{transform:translateY(-7px);box-shadow:0 22px 46px rgba(8,31,23,.14);color:var(--ink)}
+.home-feature-icon{flex:0 0 62px;width:62px;height:62px;display:flex;align-items:center;justify-content:center;border-radius:18px;background:var(--hl-100);font-size:30px}
+.home-feature-label{font-size:12px;font-weight:800;letter-spacing:1.4px;color:var(--hl-600)}
+.home-feature-card h3{font-size:21px;font-weight:800;margin:7px 0 10px;color:var(--hl-950)}
+.home-feature-card p{font-size:14px;line-height:1.7;color:var(--muted);margin-bottom:14px}
+.home-feature-card strong{font-size:14px;color:var(--hl-700)}
+.home-about-banner{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:30px;padding:42px 48px;border-radius:28px;color:#fff;background:linear-gradient(120deg,var(--hl-950),var(--hl-800) 58%,var(--hl-700));box-shadow:0 20px 48px rgba(8,31,23,.18);overflow:hidden}
+.home-about-banner:after{content:"🪷";position:absolute;right:240px;bottom:-38px;font-size:130px;opacity:.08}
+.home-about-banner p{max-width:700px;color:rgba(255,255,255,.76)}
+@media(max-width:991px){.home-about-banner{align-items:flex-start;flex-direction:column;padding:34px}.home-about-banner:after{right:20px}}
