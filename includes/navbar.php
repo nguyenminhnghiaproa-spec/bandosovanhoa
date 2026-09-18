@@ -89,6 +89,19 @@ $currentPage =
                 </a>
 
 
+                <!-- THÔNG TIN XÃ HÒA LONG -->
+
+                <a
+                    class="nav-link
+                    <?= $currentPage === 'about'
+                        ? 'active fw-semibold'
+                        : '' ?>"
+                    href="/bandosovanhoa/about.php"
+                >
+                    🏘️ Thông tin xã Hòa Long
+                </a>
+
+
                 <!-- BẢN ĐỒ -->
 
                 <a
