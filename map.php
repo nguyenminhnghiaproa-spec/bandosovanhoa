@@ -2262,7 +2262,7 @@ async function drawRouteFromCurrentLocation() {
 
     if (button) {
         button.disabled = true;
-        button.innerHTML = "⏳ Đang lấy vị trí và tìm đường...";
+        button.innerHTML = "⏳ Đang tìm các điểm gần bạn nhất...";
     }
 
     try {
@@ -2293,42 +2293,91 @@ async function drawRouteFromCurrentLocation() {
             journeyLine = null;
         }
 
-        var allPoints = [
-            L.latLng(userLat, userLng)
+        /*
+         * OSRM Trip tự tối ưu thứ tự ghé các địa điểm.
+         * source=first giữ vị trí hiện tại là điểm xuất phát.
+         * roundtrip=false không bắt buộc quay về nơi xuất phát.
+         */
+        var originalPoints = [
+            {
+                type: "user",
+                lat: userLat,
+                lng: userLng
+            }
         ].concat(
             activeJourneyMarkers.map(function(item) {
-                return item.marker.getLatLng();
+                var point = item.marker.getLatLng();
+                return {
+                    type: "location",
+                    item: item,
+                    lat: point.lat,
+                    lng: point.lng
+                };
             })
         );
 
-        var coordinates = allPoints.map(function(point) {
+        var coordinates = originalPoints.map(function(point) {
             return point.lng + "," + point.lat;
         }).join(";");
 
-        var routeUrl =
-            "https://router.project-osrm.org/route/v1/driving/" +
+        var tripUrl =
+            "https://router.project-osrm.org/trip/v1/driving/" +
             coordinates +
-            "?overview=full&geometries=geojson&steps=false";
+            "?source=first&roundtrip=false&overview=full&geometries=geojson&steps=false";
 
-        var response = await fetch(routeUrl);
+        var response = await fetch(tripUrl);
 
         if (!response.ok) {
-            throw new Error("Không thể kết nối dịch vụ chỉ đường.");
+            throw new Error("Không thể kết nối dịch vụ tìm hành trình.");
         }
 
-        var routeData = await response.json();
+        var tripData = await response.json();
 
         if (
-            routeData.code !== "Ok" ||
-            !routeData.routes ||
-            !routeData.routes.length
+            tripData.code !== "Ok" ||
+            !tripData.trips ||
+            !tripData.trips.length ||
+            !tripData.waypoints
         ) {
-            throw new Error("Không tìm thấy tuyến đường phù hợp.");
+            throw new Error("Không tìm thấy hành trình phù hợp.");
         }
 
-        var route = routeData.routes[0];
+        /*
+         * waypoint_index cho biết thứ tự tối ưu trong chuyến đi.
+         * Vị trí người dùng luôn là điểm xuất phát; các địa điểm
+         * được sắp lại từ gần/phù hợp nhất theo tuyến đường.
+         */
+        var orderedLocations = [];
 
-        var roadPoints = route.geometry.coordinates.map(
+        tripData.waypoints.forEach(function(waypoint, originalIndex) {
+            if (originalIndex === 0) {
+                return;
+            }
+
+            orderedLocations.push({
+                order: waypoint.waypoint_index,
+                item: activeJourneyMarkers[originalIndex - 1]
+            });
+        });
+
+        orderedLocations.sort(function(a, b) {
+            return a.order - b.order;
+        });
+
+        activeJourneyMarkers = orderedLocations.map(function(entry) {
+            return entry.item;
+        });
+
+        /* Đánh số marker lại theo thứ tự tối ưu mới */
+        activeJourneyMarkers.forEach(function(item, index) {
+            item.marker.setIcon(
+                createJourneyNumberIcon(index + 1)
+            );
+        });
+
+        var trip = tripData.trips[0];
+
+        var roadPoints = trip.geometry.coordinates.map(
             function(coord) {
                 return [coord[1], coord[0]];
             }
@@ -2355,10 +2404,10 @@ async function drawRouteFromCurrentLocation() {
             }
         );
 
-        var distanceKm = (route.distance / 1000).toFixed(1);
+        var distanceKm = (trip.distance / 1000).toFixed(1);
         var durationMinutes = Math.max(
             1,
-            Math.round(route.duration / 60)
+            Math.round(trip.duration / 60)
         );
 
         var infoBox = document.querySelector(
@@ -2367,15 +2416,15 @@ async function drawRouteFromCurrentLocation() {
 
         if (infoBox) {
             infoBox.innerHTML =
-                "<strong>📍 Chỉ đường từ vị trí hiện tại</strong>" +
-                "<small>Vị trí của bạn → điểm 1 → điểm 2 → ... → điểm " +
+                "<strong>📍 Hành trình gần bạn nhất</strong>" +
+                "<small>Hệ thống đã tự sắp xếp lại: vị trí của bạn → điểm gần/phù hợp nhất → các điểm tiếp theo.<br>" +
                 activeJourneyMarkers.length +
-                "<br>" +
+                " điểm · " +
                 distanceKm +
                 " km · khoảng " +
                 durationMinutes +
                 " phút di chuyển</small>" +
-                '<button type="button" id="journeyDirectionsButton" class="journey-route-button">🧭 Cập nhật đường đi từ vị trí hiện tại</button>';
+                '<button type="button" id="journeyDirectionsButton" class="journey-route-button">🧭 Tính lại từ vị trí hiện tại</button>';
 
             document
                 .getElementById("journeyDirectionsButton")
@@ -2389,14 +2438,14 @@ async function drawRouteFromCurrentLocation() {
 
     } catch (error) {
 
-        console.error("Lỗi chỉ đường từ vị trí hiện tại:", error);
+        console.error("Lỗi tối ưu hành trình:", error);
 
         if (error && error.code === 1) {
-            alert("Bạn cần cho phép trình duyệt truy cập vị trí để chỉ đường từ vị trí hiện tại.");
+            alert("Bạn cần cho phép trình duyệt truy cập vị trí để tìm địa điểm gần bạn.");
         } else if (error && error.code === 3) {
             alert("Không xác định được vị trí kịp thời. Hãy bật GPS/vị trí rồi thử lại.");
         } else {
-            alert(error.message || "Không thể tạo đường đi từ vị trí hiện tại.");
+            alert(error.message || "Không thể tính hành trình gần bạn nhất.");
         }
 
     } finally {
@@ -2406,8 +2455,8 @@ async function drawRouteFromCurrentLocation() {
         if (button) {
             button.disabled = false;
 
-            if (button.innerHTML.indexOf("Cập nhật") === -1) {
-                button.innerHTML = "🧭 Đường đi từ vị trí hiện tại";
+            if (button.innerHTML.indexOf("Tính lại") === -1) {
+                button.innerHTML = "🧭 Tìm hành trình gần bạn nhất";
             }
         }
     }
@@ -2547,7 +2596,7 @@ async function showJourneyOnMap(themeKey) {
                         " km · khoảng " +
                         durationMinutes +
                         " phút di chuyển</small>" +
-                        '<button type="button" id="journeyDirectionsButton" class="journey-route-button">🧭 Đường đi từ vị trí hiện tại</button>';
+                        '<button type="button" id="journeyDirectionsButton" class="journey-route-button">🧭 Tìm hành trình gần bạn nhất</button>';
 
                     L.DomEvent.disableClickPropagation(div);
 
@@ -2621,7 +2670,7 @@ async function showJourneyOnMap(themeKey) {
             " điểm · Các số 1 → " +
             journeyMarkers.length +
             " là thứ tự khám phá</small>" +
-            '<button type="button" id="journeyDirectionsButton" class="journey-route-button">🧭 Đường đi từ vị trí hiện tại</button>';
+            '<button type="button" id="journeyDirectionsButton" class="journey-route-button">🧭 Tìm hành trình gần bạn nhất</button>';
 
         L.DomEvent.disableClickPropagation(div);
 
