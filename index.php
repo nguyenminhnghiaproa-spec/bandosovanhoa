@@ -1709,6 +1709,17 @@ require_once("includes/navbar.php");
 
 
 
+
+    <div class="home-journey-banner mt-5">
+        <div class="home-journey-icon">🌿</div>
+        <div class="home-journey-copy">
+            <span class="home-feature-label text-white-50">TRẢI NGHIỆM SÁNG TẠO</span>
+            <h2>Hành trình khám phá Hòa Long</h2>
+            <p>Chọn Văn hóa, Ẩm thực, OCOP hoặc Du lịch để hệ thống gợi ý các điểm phù hợp và xem hành trình trực tiếp trên bản đồ số.</p>
+        </div>
+        <a href="journey.php" class="btn btn-light btn-lg fw-bold text-success">Bắt đầu hành trình →</a>
+    </div>
+
 </div>
 </section>
 
