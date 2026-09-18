@@ -36,3 +36,23 @@ footer{background:var(--hl-950)!important}
 .home-about-banner:after{content:"🪷";position:absolute;right:240px;bottom:-38px;font-size:130px;opacity:.08}
 .home-about-banner p{max-width:700px;color:rgba(255,255,255,.76)}
 @media(max-width:991px){.home-about-banner{align-items:flex-start;flex-direction:column;padding:34px}.home-about-banner:after{right:20px}}
+
+
+/* Hanh trinh kham pha Hoa Long */
+.home-journey-banner{position:relative;z-index:1;display:flex;align-items:center;gap:24px;padding:32px 36px;border-radius:26px;background:linear-gradient(120deg,var(--hl-950),var(--hl-800) 62%,var(--hl-700));color:#fff;box-shadow:0 20px 48px rgba(8,31,23,.18);overflow:hidden}
+.home-journey-banner:after{content:"";position:absolute;width:220px;height:220px;border:1px solid rgba(255,255,255,.08);border-radius:50%;right:150px;top:-120px}
+.home-journey-icon{flex:0 0 72px;width:72px;height:72px;border-radius:22px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.12);font-size:34px}
+.home-journey-copy{flex:1}.home-journey-copy h2{font-weight:800;font-size:26px;margin:5px 0 8px}.home-journey-copy p{max-width:720px;margin:0;color:rgba(255,255,255,.78);line-height:1.65}
+
+.journey-hero{padding:78px 0 70px;color:#fff;background:radial-gradient(circle at 15% 20%,rgba(255,255,255,.08),transparent 26%),linear-gradient(125deg,var(--hl-950),var(--hl-800) 58%,var(--hl-700))}
+.journey-hero h1{font-size:clamp(36px,5vw,58px);font-weight:850;letter-spacing:-1.7px;margin:10px 0 14px}.journey-hero p{max-width:760px;margin:auto;color:rgba(255,255,255,.78);font-size:17px}.journey-kicker,.journey-small-title{font-size:12px;font-weight:850;letter-spacing:1.8px}.journey-kicker{color:#b9dcc8}
+.journey-content{background:linear-gradient(180deg,#f5f9f6,#eaf3ed)}
+.journey-theme-panel{padding:30px;border-radius:28px;background:#fff;border:1px solid rgba(18,60,44,.08);box-shadow:var(--shadow)}
+.journey-small-title{color:var(--hl-600)}
+.journey-theme-btn{display:flex;align-items:center;justify-content:center;gap:10px;min-height:76px;padding:15px;border-radius:18px;background:var(--hl-50);border:1px solid rgba(18,60,44,.10);text-decoration:none;color:var(--hl-900);transition:.25s}.journey-theme-btn span{font-size:26px}.journey-theme-btn:hover,.journey-theme-btn.active{background:var(--hl-800);color:#fff;transform:translateY(-3px);box-shadow:0 12px 28px rgba(8,31,23,.16)}
+.journey-timeline{position:relative;margin-top:25px}.journey-timeline:before{content:"";position:absolute;left:27px;top:20px;bottom:20px;width:2px;background:linear-gradient(var(--hl-600),rgba(47,118,88,.12))}
+.journey-stop{position:relative;display:grid;grid-template-columns:56px 1fr;gap:22px;margin-bottom:26px}.journey-number{position:relative;z-index:2;width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--hl-800);border:5px solid #eaf3ed;color:#fff;font-size:18px;font-weight:850}
+.journey-stop-card{display:grid;grid-template-columns:250px 1fr;overflow:hidden;border-radius:24px;background:#fff;border:1px solid rgba(18,60,44,.08);box-shadow:0 12px 32px rgba(8,31,23,.08)}
+.journey-stop-image{min-height:210px;background:var(--hl-100)}.journey-stop-image img{width:100%;height:100%;min-height:210px;object-fit:cover}.journey-no-image{height:100%;min-height:210px;display:flex;align-items:center;justify-content:center;font-size:60px}.journey-stop-body{padding:28px}.journey-stop-body h3{font-size:24px;font-weight:800;color:var(--hl-950)}.journey-address{font-size:14px;color:var(--muted);margin-bottom:10px}.journey-desc{color:var(--muted);line-height:1.65;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.journey-empty{padding:60px;border-radius:24px;background:#fff;box-shadow:var(--shadow)}.journey-empty>div{font-size:55px}
+@media(max-width:991px){.home-journey-banner{align-items:flex-start;flex-direction:column}.journey-stop-card{grid-template-columns:1fr}.journey-stop-image,.journey-stop-image img,.journey-no-image{min-height:240px}}
+@media(max-width:575px){.journey-theme-panel{padding:20px}.journey-theme-btn{flex-direction:column;min-height:105px}.journey-stop{grid-template-columns:42px 1fr;gap:12px}.journey-number{width:42px;height:42px;border-width:4px}.journey-timeline:before{left:20px}.journey-stop-body{padding:20px}}
