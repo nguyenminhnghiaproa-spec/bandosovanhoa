@@ -1,0 +1,21 @@
+# File cấu hình database local
+config/database.php
+
+# File test database local
+test_database.php
+
+# File hệ thống Windows
+Thumbs.db
+Desktop.ini
+
+# File IDE
+.vscode/
+.idea/
+
+# File tạm
+*.log
+*.tmp
+
+# XAMPP / local environment
+.env
+.env.*
