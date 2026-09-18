@@ -1655,6 +1655,72 @@ require_once("includes/navbar.php");
 
 
 <!-- =====================================================
+     KHÁM PHÁ THÊM
+===================================================== -->
+
+<section class="home-more-section py-5">
+<div class="container">
+
+    <div class="text-center mb-5">
+        <div class="text-success fw-bold mb-2">KHÁM PHÁ HÒA LONG</div>
+        <h2 class="section-title">Trải nghiệm địa phương trên nền tảng số</h2>
+        <p class="section-description mx-auto" style="max-width:720px;">
+            Tìm hiểu thông tin xã, khám phá điểm đến, theo dõi sự kiện và tra cứu vị trí trực quan trên bản đồ số.
+        </p>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <a href="about.php" class="home-feature-card text-decoration-none">
+                <div class="home-feature-icon">🏘️</div>
+                <div>
+                    <span class="home-feature-label">GIỚI THIỆU</span>
+                    <h3>Thông tin xã Hòa Long</h3>
+                    <p>Tìm hiểu tổng quan, văn hóa, du lịch, ẩm thực và những nét đặc trưng của địa phương.</p>
+                    <strong>Khám phá Hòa Long →</strong>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-lg-4">
+            <a href="events.php" class="home-feature-card text-decoration-none">
+                <div class="home-feature-icon">🎉</div>
+                <div>
+                    <span class="home-feature-label">HOẠT ĐỘNG</span>
+                    <h3>Sự kiện địa phương</h3>
+                    <p>Theo dõi các sự kiện và hoạt động nổi bật được cập nhật trên hệ thống.</p>
+                    <strong>Xem sự kiện →</strong>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-lg-4">
+            <a href="map.php" class="home-feature-card text-decoration-none">
+                <div class="home-feature-icon">🗺️</div>
+                <div>
+                    <span class="home-feature-label">BẢN ĐỒ SỐ</span>
+                    <h3>Khám phá trên bản đồ</h3>
+                    <p>Tra cứu nhanh vị trí các địa điểm văn hóa, du lịch và điểm đến của Hòa Long.</p>
+                    <strong>Mở bản đồ →</strong>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <div class="home-about-banner mt-5">
+        <div>
+            <span class="home-feature-label text-white-50">BẢN ĐỒ SỐ HÒA LONG</span>
+            <h2 class="fw-bold mt-2 mb-3">Văn hóa địa phương trong không gian số</h2>
+            <p class="mb-0">Kết nối thông tin, hình ảnh và vị trí địa điểm trong một không gian tra cứu trực quan, thuận tiện.</p>
+        </div>
+        <a href="about.php" class="btn btn-light btn-lg fw-bold text-success">Tìm hiểu về Hòa Long →</a>
+    </div>
+
+</div>
+</section>
+
+
+<!-- =====================================================
      FOOTER
 ===================================================== -->
 
