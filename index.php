@@ -1707,14 +1707,7 @@ require_once("includes/navbar.php");
         </div>
     </div>
 
-    <div class="home-about-banner mt-5">
-        <div>
-            <span class="home-feature-label text-white-50">BẢN ĐỒ SỐ HÒA LONG</span>
-            <h2 class="fw-bold mt-2 mb-3">Văn hóa địa phương trong không gian số</h2>
-            <p class="mb-0">Kết nối thông tin, hình ảnh và vị trí địa điểm trong một không gian tra cứu trực quan, thuận tiện.</p>
-        </div>
-        <a href="about.php" class="btn btn-light btn-lg fw-bold text-success">Tìm hiểu về Hòa Long →</a>
-    </div>
+
 
 </div>
 </section>
