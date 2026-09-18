@@ -1,0 +1,22 @@
+/* Public theme - Hoa Long forest green */
+:root{--hl-950:#071f17;--hl-900:#0b2d21;--hl-800:#123c2c;--hl-700:#1d5a42;--hl-600:#2f7658;--hl-100:#e8f2ec;--hl-50:#f5f9f6;--ink:#13251d;--muted:#6c7b73;--shadow:0 16px 40px rgba(8,31,23,.10)}
+html{scroll-behavior:smooth}body{background:var(--hl-50)!important;color:var(--ink)!important;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+.navbar.bg-success,.main-navbar{background:linear-gradient(90deg,var(--hl-950),var(--hl-800))!important;box-shadow:0 8px 25px rgba(7,31,23,.16)!important}
+.navbar{padding:14px 0}.navbar-brand{font-weight:800!important;letter-spacing:.4px}.navbar .nav-link{color:rgba(255,255,255,.78)!important;margin-left:8px;padding:8px 13px!important;border-radius:10px;transition:.25s}.navbar .nav-link:hover,.navbar .nav-link.active{color:#fff!important;background:rgba(255,255,255,.10)}
+.section-title{color:var(--hl-950)!important;font-weight:800!important;letter-spacing:-.6px}.section-description,.text-muted{color:var(--muted)!important}
+.btn-success{background:var(--hl-800)!important;border-color:var(--hl-800)!important}.btn-success:hover{background:var(--hl-700)!important;border-color:var(--hl-700)!important;transform:translateY(-1px)}
+.btn-outline-success{color:var(--hl-800)!important;border-color:rgba(18,60,44,.35)!important}.btn-outline-success:hover{color:#fff!important;background:var(--hl-800)!important}
+.text-success{color:var(--hl-800)!important}.bg-success{background-color:var(--hl-800)!important}
+.card,.info-card,.event-card{border-color:rgba(18,60,44,.08)!important;box-shadow:var(--shadow)!important}
+footer{background:var(--hl-950)!important}
+
+/* Homepage */
+.hero{min-height:610px!important;background:linear-gradient(90deg,rgba(7,31,23,.94),rgba(18,60,44,.82),rgba(18,60,44,.45)),url("/bandosovanhoa/uploads/about/nen-gioi-thieu.png") center/cover no-repeat!important}
+.hero:before,.hero:after{display:none!important}.hero h1{font-size:clamp(46px,5vw,72px)!important;line-height:1.02!important;letter-spacing:-2.5px}.hero-description{max-width:680px!important;color:rgba(255,255,255,.82)!important}.hero-icon{filter:drop-shadow(0 18px 35px rgba(0,0,0,.22));opacity:.92}
+.stats-section{margin-top:-62px!important}.stat-box{border-radius:22px!important;border:1px solid rgba(18,60,44,.08)!important;box-shadow:0 18px 45px rgba(8,31,23,.13)!important}.stat-number{color:var(--hl-800)!important}
+.category-card,.location-card{border-radius:22px!important;overflow:hidden!important;border:1px solid rgba(18,60,44,.08)!important;box-shadow:0 10px 30px rgba(8,31,23,.07)!important}.category-card:hover,.location-card:hover{transform:translateY(-7px)!important;box-shadow:0 20px 42px rgba(8,31,23,.13)!important}.category-icon{background:var(--hl-100)!important}.map-cta{background:linear-gradient(135deg,var(--hl-950),var(--hl-800),var(--hl-700))!important;border-radius:28px!important;box-shadow:0 20px 50px rgba(8,31,23,.18)!important}
+
+/* Listing/detail pages */
+.page-header,.location-header{background:linear-gradient(135deg,var(--hl-950),var(--hl-800),var(--hl-700))!important;border-radius:24px!important;box-shadow:0 18px 45px rgba(8,31,23,.16)!important}
+.info-card{border-radius:22px!important}.info-item,.qr-box{background:var(--hl-50)!important;border:1px solid rgba(18,60,44,.07)!important}.event-card{border-radius:18px!important}.gallery-image,#map{border-radius:16px!important}
+@media(max-width:767px){.hero{min-height:auto!important;padding:70px 0 105px!important}.hero h1{font-size:40px!important}.navbar .nav-link{margin:3px 0}.stats-section{margin-top:-45px!important}}
