@@ -365,6 +365,53 @@ if (!$categoryResult) {
    VỊ TRÍ NGƯỜI DÙNG
 ========================================== */
 
+/* ==========================================
+   HÀNH TRÌNH KHÁM PHÁ
+========================================== */
+.journey-map-marker {
+    background: transparent;
+    border: none;
+}
+.journey-map-number {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #0b4a36;
+    color: #fff;
+    border: 4px solid #fff;
+    font-weight: 800;
+    font-size: 15px;
+    box-shadow: 0 4px 14px rgba(7,31,23,.35);
+}
+.journey-map-info {
+    background: rgba(255,255,255,.96);
+    padding: 13px 15px;
+    border-radius: 14px;
+    box-shadow: 0 5px 18px rgba(7,31,23,.20);
+    border: 1px solid rgba(18,60,44,.10);
+    min-width: 210px;
+}
+.journey-map-info strong {
+    color: #0b4a36;
+    display: block;
+    margin-bottom: 4px;
+}
+.journey-map-info small {
+    color: #65756d;
+}
+.journey-active-bar {
+    background: #e8f2ec;
+    border-bottom: 1px solid rgba(18,60,44,.12);
+    padding: 8px 15px;
+    color: #0b4a36;
+    font-size: 13px;
+    font-weight: 700;
+    text-align: center;
+}
+
 .user-location-dot {
     width: 18px;
     height: 18px;
@@ -1403,7 +1450,20 @@ locationMarkers.push({
             JSON_HEX_APOS |
             JSON_HEX_QUOT |
             JSON_HEX_AMP
-        ) ?>
+        ) ?>,
+
+    categoryDisplay:
+        <?= json_encode(
+            $category,
+            JSON_UNESCAPED_UNICODE |
+            JSON_HEX_TAG |
+            JSON_HEX_APOS |
+            JSON_HEX_QUOT |
+            JSON_HEX_AMP
+        ) ?>,
+
+    lat: <?= $latitude ?>,
+    lng: <?= $longitude ?>
 
 });
 
@@ -1950,11 +2010,28 @@ resetButton.addEventListener(
 
 
 
+        /* XÓA TUYẾN HÀNH TRÌNH NẾU ĐANG HIỂN THỊ */
+
+        if (journeyLine && map.hasLayer(journeyLine)) {
+            map.removeLayer(journeyLine);
+            journeyLine = null;
+        }
+
+        if (journeyInfoControl) {
+            map.removeControl(journeyInfoControl);
+            journeyInfoControl = null;
+        }
+
+
         /* HIỆN LẠI TẤT CẢ MARKER */
 
         locationMarkers.forEach(
 
             function(item) {
+
+                item.marker.setIcon(
+                    createLocationIcon(item.categoryDisplay)
+                );
 
 
                 if (
@@ -2060,6 +2137,165 @@ if (categoryFromUrl) {
     }
 
 }
+/* =====================================================
+   HÀNH TRÌNH KHÁM PHÁ TỪ URL
+   Ví dụ: map.php?journey=van-hoa
+===================================================== */
+
+var journeyFromUrl = urlParams.get("journey");
+var journeyLine = null;
+var journeyInfoControl = null;
+
+var journeyThemes = {
+    "van-hoa": {
+        label: "Văn hóa",
+        icon: "🎭",
+        keywords: ["văn hóa", "di tích"]
+    },
+    "am-thuc": {
+        label: "Ẩm thực",
+        icon: "🍜",
+        keywords: ["ẩm thực", "ăn uống"]
+    },
+    "ocop": {
+        label: "OCOP",
+        icon: "🎁",
+        keywords: ["ocop"]
+    },
+    "du-lich": {
+        label: "Du lịch - Điểm đến",
+        icon: "🏞️",
+        keywords: ["du lịch", "vui chơi", "điểm đến"]
+    }
+};
+
+function createJourneyNumberIcon(number) {
+    return L.divIcon({
+        className: "journey-map-marker",
+        html: '<div class="journey-map-number">' + number + '</div>',
+        iconSize: [40, 40],
+        iconAnchor: [20, 20],
+        popupAnchor: [0, -22]
+    });
+}
+
+function showJourneyOnMap(themeKey) {
+
+    var theme = journeyThemes[themeKey];
+
+    if (!theme) {
+        return;
+    }
+
+    /* Lọc đúng cùng nhóm chủ đề với trang Hành trình */
+    var journeyMarkers = locationMarkers
+        .filter(function(item) {
+            return theme.keywords.some(function(keyword) {
+                return item.category.includes(
+                    keyword.toLocaleLowerCase("vi-VN")
+                );
+            });
+        })
+        /* journey.php đang ORDER BY location_id DESC */
+        .sort(function(a, b) {
+            return b.id - a.id;
+        })
+        .slice(0, 6);
+
+    if (journeyMarkers.length === 0) {
+        alert("Chưa có địa điểm phù hợp cho hành trình này.");
+        return;
+    }
+
+    /* Chỉ hiện các điểm thuộc hành trình */
+    locationMarkers.forEach(function(item) {
+        if (map.hasLayer(item.marker)) {
+            map.removeLayer(item.marker);
+        }
+    });
+
+    var routePoints = [];
+
+    journeyMarkers.forEach(function(item, index) {
+
+        item.marker.setIcon(
+            createJourneyNumberIcon(index + 1)
+        );
+
+        item.marker.addTo(map);
+
+        routePoints.push(
+            item.marker.getLatLng()
+        );
+    });
+
+    /* Nối các điểm theo thứ tự hành trình */
+    if (routePoints.length >= 2) {
+        journeyLine = L.polyline(
+            routePoints,
+            {
+                color: "#1d6b4d",
+                weight: 5,
+                opacity: 0.82,
+                dashArray: "10, 8",
+                lineJoin: "round"
+            }
+        ).addTo(map);
+
+        journeyLine.bringToBack();
+    }
+
+    /* Căn bản đồ để nhìn thấy toàn bộ tuyến */
+    var journeyGroup = L.featureGroup(
+        journeyMarkers.map(function(item) {
+            return item.marker;
+        })
+    );
+
+    map.fitBounds(
+        journeyGroup.getBounds(),
+        {
+            padding: [55, 55],
+            maxZoom: 15
+        }
+    );
+
+    /* Bảng thông tin hành trình */
+    journeyInfoControl = L.control({
+        position: "topleft"
+    });
+
+    journeyInfoControl.onAdd = function() {
+        var div = L.DomUtil.create(
+            "div",
+            "journey-map-info"
+        );
+
+        div.innerHTML =
+            "<strong>" +
+            theme.icon +
+            " Hành trình " +
+            escapeHtml(theme.label) +
+            "</strong>" +
+            "<small>" +
+            journeyMarkers.length +
+            " điểm · Các số 1 → " +
+            journeyMarkers.length +
+            " là thứ tự khám phá</small>";
+
+        L.DomEvent.disableClickPropagation(div);
+
+        return div;
+    };
+
+    journeyInfoControl.addTo(map);
+}
+
+if (journeyFromUrl) {
+    showJourneyOnMap(journeyFromUrl);
+}
+
+
 /* =====================================================
    MỞ ĐỊA ĐIỂM TỪ URL
    Ví dụ: map.php?location=3
