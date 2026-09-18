@@ -402,6 +402,38 @@ if (!$categoryResult) {
 .journey-map-info small {
     color: #65756d;
 }
+.journey-route-button {
+    border: 0;
+    border-radius: 10px;
+    background: #0b4a36;
+    color: #fff;
+    font-weight: 700;
+    padding: 9px 12px;
+    margin-top: 10px;
+    width: 100%;
+    cursor: pointer;
+}
+.journey-route-button:hover {
+    background: #146047;
+}
+.journey-route-button:disabled {
+    opacity: .65;
+    cursor: wait;
+}
+.journey-user-number {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #0d6efd;
+    color: #fff;
+    border: 4px solid #fff;
+    box-shadow: 0 4px 14px rgba(13,110,253,.35);
+    font-size: 18px;
+}
+
 .journey-active-bar {
     background: #e8f2ec;
     border-bottom: 1px solid rgba(18,60,44,.12);
@@ -2179,15 +2211,14 @@ function createJourneyNumberIcon(number) {
     });
 }
 
-async function showJourneyOnMap(themeKey) {
+var activeJourneyMarkers = [];
+var activeJourneyTheme = null;
 
+function getJourneyMarkers(themeKey) {
     var theme = journeyThemes[themeKey];
+    if (!theme) return [];
 
-    if (!theme) {
-        return;
-    }
-
-    var journeyMarkers = locationMarkers
+    return locationMarkers
         .filter(function(item) {
             return theme.keywords.some(function(keyword) {
                 return item.category.includes(
@@ -2199,6 +2230,201 @@ async function showJourneyOnMap(themeKey) {
             return b.id - a.id;
         })
         .slice(0, 6);
+}
+
+function requestCurrentPosition() {
+    return new Promise(function(resolve, reject) {
+        if (!navigator.geolocation) {
+            reject(new Error("Trình duyệt không hỗ trợ định vị."));
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            resolve,
+            reject,
+            {
+                enableHighAccuracy: true,
+                timeout: 12000,
+                maximumAge: 15000
+            }
+        );
+    });
+}
+
+async function drawRouteFromCurrentLocation() {
+
+    if (!activeJourneyMarkers.length || !activeJourneyTheme) {
+        alert("Chưa có hành trình để chỉ đường.");
+        return;
+    }
+
+    var button = document.getElementById("journeyDirectionsButton");
+
+    if (button) {
+        button.disabled = true;
+        button.innerHTML = "⏳ Đang lấy vị trí và tìm đường...";
+    }
+
+    try {
+        var position = await requestCurrentPosition();
+        var userLat = position.coords.latitude;
+        var userLng = position.coords.longitude;
+
+        if (userLocationMarker && map.hasLayer(userLocationMarker)) {
+            map.removeLayer(userLocationMarker);
+        }
+
+        var userIcon = L.divIcon({
+            className: "",
+            html: '<div class="journey-user-number">👤</div>',
+            iconSize: [42, 42],
+            iconAnchor: [21, 21],
+            popupAnchor: [0, -22]
+        });
+
+        userLocationMarker = L.marker(
+            [userLat, userLng],
+            { icon: userIcon }
+        ).addTo(map)
+         .bindPopup("<strong>📍 Vị trí hiện tại của bạn</strong>");
+
+        if (journeyLine && map.hasLayer(journeyLine)) {
+            map.removeLayer(journeyLine);
+            journeyLine = null;
+        }
+
+        var allPoints = [
+            L.latLng(userLat, userLng)
+        ].concat(
+            activeJourneyMarkers.map(function(item) {
+                return item.marker.getLatLng();
+            })
+        );
+
+        var coordinates = allPoints.map(function(point) {
+            return point.lng + "," + point.lat;
+        }).join(";");
+
+        var routeUrl =
+            "https://router.project-osrm.org/route/v1/driving/" +
+            coordinates +
+            "?overview=full&geometries=geojson&steps=false";
+
+        var response = await fetch(routeUrl);
+
+        if (!response.ok) {
+            throw new Error("Không thể kết nối dịch vụ chỉ đường.");
+        }
+
+        var routeData = await response.json();
+
+        if (
+            routeData.code !== "Ok" ||
+            !routeData.routes ||
+            !routeData.routes.length
+        ) {
+            throw new Error("Không tìm thấy tuyến đường phù hợp.");
+        }
+
+        var route = routeData.routes[0];
+
+        var roadPoints = route.geometry.coordinates.map(
+            function(coord) {
+                return [coord[1], coord[0]];
+            }
+        );
+
+        journeyLine = L.polyline(
+            roadPoints,
+            {
+                color: "#0d6efd",
+                weight: 6,
+                opacity: 0.9,
+                lineJoin: "round",
+                lineCap: "round"
+            }
+        ).addTo(map);
+
+        journeyLine.bringToBack();
+
+        map.fitBounds(
+            journeyLine.getBounds(),
+            {
+                padding: [55, 55],
+                maxZoom: 16
+            }
+        );
+
+        var distanceKm = (route.distance / 1000).toFixed(1);
+        var durationMinutes = Math.max(
+            1,
+            Math.round(route.duration / 60)
+        );
+
+        var infoBox = document.querySelector(
+            ".journey-map-info"
+        );
+
+        if (infoBox) {
+            infoBox.innerHTML =
+                "<strong>📍 Chỉ đường từ vị trí hiện tại</strong>" +
+                "<small>Vị trí của bạn → điểm 1 → điểm 2 → ... → điểm " +
+                activeJourneyMarkers.length +
+                "<br>" +
+                distanceKm +
+                " km · khoảng " +
+                durationMinutes +
+                " phút di chuyển</small>" +
+                '<button type="button" id="journeyDirectionsButton" class="journey-route-button">🧭 Cập nhật đường đi từ vị trí hiện tại</button>';
+
+            document
+                .getElementById("journeyDirectionsButton")
+                .addEventListener(
+                    "click",
+                    drawRouteFromCurrentLocation
+                );
+        }
+
+        userLocationMarker.openPopup();
+
+    } catch (error) {
+
+        console.error("Lỗi chỉ đường từ vị trí hiện tại:", error);
+
+        if (error && error.code === 1) {
+            alert("Bạn cần cho phép trình duyệt truy cập vị trí để chỉ đường từ vị trí hiện tại.");
+        } else if (error && error.code === 3) {
+            alert("Không xác định được vị trí kịp thời. Hãy bật GPS/vị trí rồi thử lại.");
+        } else {
+            alert(error.message || "Không thể tạo đường đi từ vị trí hiện tại.");
+        }
+
+    } finally {
+
+        button = document.getElementById("journeyDirectionsButton");
+
+        if (button) {
+            button.disabled = false;
+
+            if (button.innerHTML.indexOf("Cập nhật") === -1) {
+                button.innerHTML = "🧭 Đường đi từ vị trí hiện tại";
+            }
+        }
+    }
+}
+
+async function showJourneyOnMap(themeKey) {
+
+    var theme = journeyThemes[themeKey];
+
+    if (!theme) {
+        return;
+    }
+
+    var journeyMarkers = getJourneyMarkers(themeKey);
+
+    activeJourneyMarkers = journeyMarkers;
+    activeJourneyTheme = theme;
 
     if (journeyMarkers.length === 0) {
         alert("Chưa có địa điểm phù hợp cho hành trình này.");
@@ -2320,7 +2546,8 @@ async function showJourneyOnMap(themeKey) {
                         distanceKm +
                         " km · khoảng " +
                         durationMinutes +
-                        " phút di chuyển</small>";
+                        " phút di chuyển</small>" +
+                        '<button type="button" id="journeyDirectionsButton" class="journey-route-button">🧭 Đường đi từ vị trí hiện tại</button>';
 
                     L.DomEvent.disableClickPropagation(div);
 
@@ -2328,6 +2555,16 @@ async function showJourneyOnMap(themeKey) {
                 };
 
                 journeyInfoControl.addTo(map);
+
+                var directionsButton =
+                    document.getElementById("journeyDirectionsButton");
+
+                if (directionsButton) {
+                    directionsButton.addEventListener(
+                        "click",
+                        drawRouteFromCurrentLocation
+                    );
+                }
 
                 return;
             }
@@ -2383,7 +2620,8 @@ async function showJourneyOnMap(themeKey) {
             journeyMarkers.length +
             " điểm · Các số 1 → " +
             journeyMarkers.length +
-            " là thứ tự khám phá</small>";
+            " là thứ tự khám phá</small>" +
+            '<button type="button" id="journeyDirectionsButton" class="journey-route-button">🧭 Đường đi từ vị trí hiện tại</button>';
 
         L.DomEvent.disableClickPropagation(div);
 
@@ -2391,6 +2629,16 @@ async function showJourneyOnMap(themeKey) {
     };
 
     journeyInfoControl.addTo(map);
+
+    var directionsButton =
+        document.getElementById("journeyDirectionsButton");
+
+    if (directionsButton) {
+        directionsButton.addEventListener(
+            "click",
+            drawRouteFromCurrentLocation
+        );
+    }
 }
 
 if (journeyFromUrl) {
