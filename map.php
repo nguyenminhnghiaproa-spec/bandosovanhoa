@@ -2179,7 +2179,7 @@ function createJourneyNumberIcon(number) {
     });
 }
 
-function showJourneyOnMap(themeKey) {
+async function showJourneyOnMap(themeKey) {
 
     var theme = journeyThemes[themeKey];
 
@@ -2187,7 +2187,6 @@ function showJourneyOnMap(themeKey) {
         return;
     }
 
-    /* Lọc đúng cùng nhóm chủ đề với trang Hành trình */
     var journeyMarkers = locationMarkers
         .filter(function(item) {
             return theme.keywords.some(function(keyword) {
@@ -2196,7 +2195,6 @@ function showJourneyOnMap(themeKey) {
                 );
             });
         })
-        /* journey.php đang ORDER BY location_id DESC */
         .sort(function(a, b) {
             return b.id - a.id;
         })
@@ -2207,7 +2205,6 @@ function showJourneyOnMap(themeKey) {
         return;
     }
 
-    /* Chỉ hiện các điểm thuộc hành trình */
     locationMarkers.forEach(function(item) {
         if (map.hasLayer(item.marker)) {
             map.removeLayer(item.marker);
@@ -2229,43 +2226,148 @@ function showJourneyOnMap(themeKey) {
         );
     });
 
-    /* Nối các điểm theo thứ tự hành trình */
+    /* Tìm đường giao thông thực tế qua các điểm bằng OSRM */
     if (routePoints.length >= 2) {
-        journeyLine = L.polyline(
-            routePoints,
-            {
-                color: "#1d6b4d",
-                weight: 5,
-                opacity: 0.82,
-                dashArray: "10, 8",
-                lineJoin: "round"
-            }
-        ).addTo(map);
 
-        journeyLine.bringToBack();
+        var coordinates = routePoints.map(function(point) {
+            return point.lng + "," + point.lat;
+        }).join(";");
+
+        var routeUrl =
+            "https://router.project-osrm.org/route/v1/driving/" +
+            coordinates +
+            "?overview=full&geometries=geojson&steps=false";
+
+        try {
+
+            var response = await fetch(routeUrl);
+
+            if (!response.ok) {
+                throw new Error("Không thể kết nối dịch vụ chỉ đường.");
+            }
+
+            var routeData = await response.json();
+
+            if (
+                routeData.code === "Ok" &&
+                routeData.routes &&
+                routeData.routes.length > 0
+            ) {
+
+                var route = routeData.routes[0];
+
+                var roadPoints =
+                    route.geometry.coordinates.map(
+                        function(coord) {
+                            return [coord[1], coord[0]];
+                        }
+                    );
+
+                journeyLine = L.polyline(
+                    roadPoints,
+                    {
+                        color: "#1d6b4d",
+                        weight: 6,
+                        opacity: 0.88,
+                        lineJoin: "round",
+                        lineCap: "round"
+                    }
+                ).addTo(map);
+
+                journeyLine.bringToBack();
+
+                map.fitBounds(
+                    journeyLine.getBounds(),
+                    {
+                        padding: [55, 55],
+                        maxZoom: 16
+                    }
+                );
+
+                var distanceKm =
+                    (route.distance / 1000).toFixed(1);
+
+                var durationMinutes =
+                    Math.max(
+                        1,
+                        Math.round(route.duration / 60)
+                    );
+
+                if (journeyInfoControl) {
+                    map.removeControl(journeyInfoControl);
+                }
+
+                journeyInfoControl = L.control({
+                    position: "topleft"
+                });
+
+                journeyInfoControl.onAdd = function() {
+
+                    var div = L.DomUtil.create(
+                        "div",
+                        "journey-map-info"
+                    );
+
+                    div.innerHTML =
+                        "<strong>" +
+                        theme.icon +
+                        " Hành trình " +
+                        escapeHtml(theme.label) +
+                        "</strong>" +
+                        "<small>" +
+                        journeyMarkers.length +
+                        " điểm · " +
+                        distanceKm +
+                        " km · khoảng " +
+                        durationMinutes +
+                        " phút di chuyển</small>";
+
+                    L.DomEvent.disableClickPropagation(div);
+
+                    return div;
+                };
+
+                journeyInfoControl.addTo(map);
+
+                return;
+            }
+
+            throw new Error("Không tìm thấy tuyến đường phù hợp.");
+
+        } catch (error) {
+
+            console.error(
+                "Lỗi tìm đường hành trình:",
+                error
+            );
+
+            /* Nếu dịch vụ chỉ đường lỗi, vẫn giữ marker và zoom tới các điểm */
+            var fallbackGroup = L.featureGroup(
+                journeyMarkers.map(function(item) {
+                    return item.marker;
+                })
+            );
+
+            map.fitBounds(
+                fallbackGroup.getBounds(),
+                {
+                    padding: [55, 55],
+                    maxZoom: 15
+                }
+            );
+        }
     }
 
-    /* Căn bản đồ để nhìn thấy toàn bộ tuyến */
-    var journeyGroup = L.featureGroup(
-        journeyMarkers.map(function(item) {
-            return item.marker;
-        })
-    );
+    if (journeyInfoControl) {
+        map.removeControl(journeyInfoControl);
+    }
 
-    map.fitBounds(
-        journeyGroup.getBounds(),
-        {
-            padding: [55, 55],
-            maxZoom: 15
-        }
-    );
-
-    /* Bảng thông tin hành trình */
     journeyInfoControl = L.control({
         position: "topleft"
     });
 
     journeyInfoControl.onAdd = function() {
+
         var div = L.DomUtil.create(
             "div",
             "journey-map-info"
