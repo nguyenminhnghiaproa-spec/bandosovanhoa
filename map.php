@@ -682,20 +682,126 @@ var map =
    OPENSTREETMAP
 ===================================================== */
 
-L.tileLayer(
+/* =====================================================
+   LỚP BẢN ĐỒ NỀN
+   - Mặc định: bản đồ đường phố chi tiết
+   - Có thể chuyển sang ảnh vệ tinh chân thực
+===================================================== */
 
+var streetLayer = L.tileLayer(
     "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-
     {
-
         maxZoom: 19,
-
         attribution:
             "&copy; OpenStreetMap contributors"
+    }
+);
+
+var satelliteLayer = L.tileLayer(
+    "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    {
+        maxZoom: 19,
+        attribution:
+            "Tiles &copy; Esri"
+    }
+);
+
+streetLayer.addTo(map);
+
+L.control.layers(
+    {
+        "🗺️ Bản đồ đường phố": streetLayer,
+        "🛰️ Ảnh vệ tinh": satelliteLayer
+    },
+    null,
+    {
+        position: "topright",
+        collapsed: false
+    }
+).addTo(map);
+
+
+/* =====================================================
+   NHÃN QUẦN ĐẢO VIỆT NAM
+   Hiển thị khi xem bản đồ ở phạm vi Việt Nam/Biển Đông.
+===================================================== */
+
+var vietnamIslandLabels = L.layerGroup();
+
+function createArchipelagoLabel(lat, lng, title, subtitle) {
+
+    var icon = L.divIcon({
+        className: "",
+        html:
+            '<div style="' +
+            'background:rgba(255,255,255,.94);' +
+            'border:2px solid #b02a37;' +
+            'border-radius:9px;' +
+            'padding:6px 9px;' +
+            'white-space:nowrap;' +
+            'box-shadow:0 2px 8px rgba(0,0,0,.18);' +
+            'text-align:center;' +
+            'font-size:12px;' +
+            'line-height:1.25;' +
+            'color:#842029;">' +
+            '<strong>' + title + '</strong><br>' +
+            '<span style="font-size:10px;color:#555;">' +
+            subtitle +
+            '</span></div>',
+        iconSize: [150, 48],
+        iconAnchor: [75, 24]
+    });
+
+    return L.marker(
+        [lat, lng],
+        {
+            icon: icon,
+            interactive: false
+        }
+    );
+}
+
+createArchipelagoLabel(
+    16.5,
+    112.0,
+    "QUẦN ĐẢO HOÀNG SA",
+    "Paracel Islands"
+).addTo(vietnamIslandLabels);
+
+createArchipelagoLabel(
+    10.0,
+    114.0,
+    "QUẦN ĐẢO TRƯỜNG SA",
+    "Spratly Islands"
+).addTo(vietnamIslandLabels);
+
+vietnamIslandLabels.addTo(map);
+
+
+/* Chỉ hiện nhãn quần đảo khi zoom ra đủ rộng */
+function updateVietnamIslandLabels() {
+
+    if (map.getZoom() <= 8) {
+
+        if (!map.hasLayer(vietnamIslandLabels)) {
+            vietnamIslandLabels.addTo(map);
+        }
+
+    } else {
+
+        if (map.hasLayer(vietnamIslandLabels)) {
+            map.removeLayer(vietnamIslandLabels);
+        }
 
     }
+}
 
-).addTo(map);
+map.on(
+    "zoomend",
+    updateVietnamIslandLabels
+);
+
+updateVietnamIslandLabels();
 
 
 
