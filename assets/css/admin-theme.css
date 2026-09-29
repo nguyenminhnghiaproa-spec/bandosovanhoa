@@ -1,0 +1,30 @@
+:root{--admin-green:#123c2c;--admin-green-2:#1d5a42;--admin-soft:#eef5f0;--admin-bg:#f5f7f6;--admin-border:#e3e9e5;--admin-text:#17251e;--admin-muted:#6d7b73}
+body{background:var(--admin-bg)!important;color:var(--admin-text)}
+.admin-navbar{background:linear-gradient(135deg,#0b2d21,#1d5a42)!important;padding:.72rem 0}
+.admin-navbar .navbar-brand{font-size:1rem;letter-spacing:.02em}
+.admin-navbar .nav-link{border-radius:9px;padding:.5rem .7rem!important;margin:0 .05rem;color:rgba(255,255,255,.78)!important;font-size:.92rem}
+.admin-navbar .nav-link:hover,.admin-navbar .nav-link.active{background:rgba(255,255,255,.13);color:#fff!important}
+.admin-page{max-width:1440px;margin:auto;padding:28px 24px 42px}
+.page-header{margin-bottom:22px!important}
+.page-title{font-weight:800!important;font-size:1.65rem;margin-bottom:.25rem!important}
+.admin-card,.location-card,.category-card,.event-card,.table-card,.stat-card,.event-stat-card,.chart-card,.quick-action-card{border:1px solid var(--admin-border)!important;border-radius:16px!important;box-shadow:0 7px 22px rgba(12,45,33,.06)!important;background:#fff}
+.table{margin-bottom:0!important}
+.table thead th{background:#f0f6f2!important;color:#365044!important;border-bottom:1px solid #dce8e0!important;font-size:.78rem;text-transform:uppercase;letter-spacing:.035em;padding:.9rem .8rem;white-space:nowrap}
+.table tbody td{padding:.82rem .8rem;border-color:#edf1ee;vertical-align:middle}
+.table-hover>tbody>tr:hover>*{background:#fafcfb}
+.btn{border-radius:9px;font-weight:600}
+.btn-sm{padding:.35rem .55rem}
+.btn-success{background:#1d5a42;border-color:#1d5a42}
+.btn-success:hover{background:#123c2c;border-color:#123c2c}
+.badge{border-radius:7px;padding:.42em .65em}
+.stat-card .card-body,.event-stat-card .card-body{padding:1.2rem}
+.stat-number{font-size:1.8rem!important}
+.stat-icon,.event-stat-icon{width:50px!important;height:50px!important;font-size:24px!important}
+.admin-stat-card{height:100%}
+.admin-stat-label{font-size:.82rem;color:var(--admin-muted);font-weight:600}
+.admin-stat-number{font-size:1.7rem;font-weight:800;margin-top:3px}
+.admin-table-card{overflow:hidden}
+.admin-table-card .table-responsive{max-height:650px}
+.action-buttons,td form{gap:5px}
+@media(max-width:991px){.admin-navbar .nav-link{margin-top:4px}.admin-page{padding:22px 15px}.page-title{font-size:1.45rem}}
+@media(max-width:767px){.admin-page{padding:18px 12px}.page-header{align-items:flex-start!important;flex-direction:column;gap:12px}.table{font-size:.9rem}.btn-sm{padding:.32rem .5rem}}
