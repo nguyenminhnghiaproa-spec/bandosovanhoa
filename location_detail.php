@@ -482,6 +482,17 @@ body {
 .rating-stars label:hover ~ label,
 .rating-stars input:checked ~ label { color: #ffc107; }
 .review-stars { color: #ffc107; letter-spacing: 2px; }
+.review-list {
+    max-height: 620px;
+    overflow-y: auto;
+    padding-right: 10px;
+    scroll-behavior: smooth;
+    scrollbar-width: thin;
+}
+.review-list::-webkit-scrollbar { width: 8px; }
+.review-list::-webkit-scrollbar-track { background: #f1f4f2; border-radius: 10px; }
+.review-list::-webkit-scrollbar-thumb { background: #b8cfc0; border-radius: 10px; }
+.review-list::-webkit-scrollbar-thumb:hover { background: #7fa78e; }
 .review-item { border-bottom: 1px solid #edf0ee; padding: 18px 0; }
 .review-photo-grid { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
 .review-photo-thumb { width:110px; height:90px; object-fit:cover; border-radius:10px; cursor:zoom-in; transition:.2s; }
@@ -1055,7 +1066,9 @@ require_once("includes/navbar.php");
     <h5 class="fw-bold mb-2">Nhận xét từ khách tham quan</h5>
     <?php if ($reviews->num_rows === 0): ?>
         <div class="text-muted py-4">Chưa có nhận xét nào được duyệt.</div>
-    <?php else: while($review=$reviews->fetch_assoc()): ?>
+    <?php else: ?>
+    <div class="review-list" id="reviewList">
+    <?php while($review=$reviews->fetch_assoc()): ?>
         <div class="review-item">
             <div class="d-flex justify-content-between gap-2 flex-wrap">
                 <strong><?= htmlspecialchars($review['reviewer_name']) ?></strong>
@@ -1078,7 +1091,10 @@ require_once("includes/navbar.php");
                 </div>
             <?php endif; ?>
         </div>
-    <?php endwhile; endif; ?>
+    <?php endwhile; ?>
+    </div>
+    <div class="small text-muted mt-2">↕ Cuộn trong khung để xem tất cả <?= $reviewCount ?> bình luận.</div>
+    <?php endif; ?>
 </div>
 </div>
 </div>
