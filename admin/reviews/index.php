@@ -33,7 +33,7 @@ $reviews = $conn->query("SELECT r.*, l.name location_name FROM location_reviews 
 </head>
 <body class="bg-light">
 <?php require_once("../includes/navbar.php"); ?>
-<div class="container py-4">
+<div class="admin-page">
 <h2 class="fw-bold">⭐ Đánh giá địa điểm</h2>
 <p class="text-muted">Duyệt và quản lý phản hồi của khách tham quan.</p>
 
@@ -47,11 +47,11 @@ $cards=[
 ];
 foreach($cards as $card):
 ?>
-<div class="col-6 col-lg-3"><div class="card border-0 shadow-sm h-100"><div class="card-body"><div class="text-muted"><?= $card[0] ?></div><h3 class="mb-0"><?= $card[1] ?></h3></div></div></div>
+<div class="col-6 col-lg-3"><div class="card admin-card admin-stat-card h-100"><div class="card-body"><div class="text-muted"><?= $card[0] ?></div><h3 class="mb-0"><?= $card[1] ?></h3></div></div></div>
 <?php endforeach; ?>
 </div>
 
-<div class="card border-0 shadow-sm"><div class="table-responsive">
+<div class="card admin-card admin-table-card"><div class="table-responsive">
 <table class="table table-hover align-middle mb-0">
 <thead class="table-success"><tr><th>Khách</th><th>Địa điểm</th><th>Đánh giá</th><th>Nhận xét</th><th>Ngày</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
 <tbody>
