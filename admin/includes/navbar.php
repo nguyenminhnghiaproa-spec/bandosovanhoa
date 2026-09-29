@@ -125,6 +125,19 @@ $adminName =
                 </a>
 
 
+                <!-- GÓP Ý WEBSITE -->
+
+                <a
+                    class="nav-link
+                    <?= $currentAdminPage === 'feedback'
+                        ? 'active fw-semibold'
+                        : '' ?>"
+                    href="/bandosovanhoa/admin/feedback/index.php"
+                >
+                    💬 Góp ý web
+                </a>
+
+
                 <!-- XEM TRANG KHÁCH -->
 
                 <a
