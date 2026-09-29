@@ -139,7 +139,7 @@ $events =
 ===================================================== */
 
 $reviewStmt = $conn->prepare("
-    SELECT review_id, reviewer_name, rating, comment, created_at
+    SELECT review_id, reviewer_name, rating, comment, review_image, created_at
     FROM location_reviews
     WHERE location_id = ? AND status = 'approved'
     ORDER BY created_at DESC
@@ -1001,7 +1001,7 @@ require_once("includes/navbar.php");
 <div class="col-lg-5">
     <div class="p-3 bg-light rounded-4">
         <h5 class="fw-bold mb-3">Chia sẻ trải nghiệm của bạn</h5>
-        <form action="review_submit.php" method="post">
+        <form action="review_submit.php" method="post" enctype="multipart/form-data">
             <input type="hidden" name="location_id" value="<?= (int)$location_id ?>">
             <div class="mb-3">
                 <label class="form-label fw-semibold">Tên của bạn</label>
@@ -1019,6 +1019,12 @@ require_once("includes/navbar.php");
             <div class="mb-3">
                 <label class="form-label fw-semibold">Nhận xét</label>
                 <textarea name="comment" class="form-control" rows="4" maxlength="1500" required placeholder="Bạn ấn tượng điều gì ở địa điểm này?"></textarea>
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-semibold">📷 Ảnh trải nghiệm <span class="text-muted fw-normal">(không bắt buộc)</span></label>
+                <input type="file" name="review_image" id="reviewImageInput" class="form-control" accept="image/jpeg,image/png,image/webp">
+                <div class="form-text">JPG, PNG hoặc WEBP, tối đa 5 MB.</div>
+                <img id="reviewImagePreview" class="mt-3 rounded-3 d-none" alt="Xem trước ảnh đánh giá" style="max-width:100%;max-height:240px;object-fit:cover;">
             </div>
             <button class="btn btn-success fw-semibold">Gửi đánh giá</button>
             <div class="small text-muted mt-2">Đánh giá sẽ được hiển thị sau khi quản trị viên duyệt.</div>
@@ -1038,6 +1044,9 @@ require_once("includes/navbar.php");
             </div>
             <div class="review-stars my-1"><?= str_repeat('★',(int)$review['rating']) ?><?= str_repeat('☆',5-(int)$review['rating']) ?></div>
             <div><?= nl2br(htmlspecialchars($review['comment'])) ?></div>
+            <?php if (!empty($review['review_image'])): ?>
+                <img src="<?= htmlspecialchars($review['review_image']) ?>" alt="Ảnh do khách tham quan chia sẻ" class="mt-3 rounded-3" style="width:100%;max-width:430px;max-height:300px;object-fit:cover;">
+            <?php endif; ?>
         </div>
     <?php endwhile; endif; ?>
 </div>
@@ -1281,6 +1290,22 @@ require_once("includes/navbar.php");
 
 
 <script>
+
+const reviewImageInput = document.getElementById("reviewImageInput");
+if (reviewImageInput) {
+    reviewImageInput.addEventListener("change", function () {
+        const preview = document.getElementById("reviewImagePreview");
+        const file = this.files && this.files[0];
+        if (!file) {
+            preview.classList.add("d-none");
+            preview.removeAttribute("src");
+            return;
+        }
+        preview.src = URL.createObjectURL(file);
+        preview.classList.remove("d-none");
+    });
+}
+
 
 /* =====================================================
    BẢN ĐỒ
