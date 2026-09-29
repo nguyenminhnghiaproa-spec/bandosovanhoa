@@ -148,6 +148,21 @@ $reviewStmt->bind_param("i", $location_id);
 $reviewStmt->execute();
 $reviews = $reviewStmt->get_result();
 
+$reviewImages = [];
+$reviewImageStmt = $conn->prepare("
+    SELECT ri.review_id, ri.image_url
+    FROM review_images ri
+    INNER JOIN location_reviews r ON r.review_id = ri.review_id
+    WHERE r.location_id = ? AND r.status = 'approved'
+    ORDER BY ri.review_image_id ASC
+");
+$reviewImageStmt->bind_param("i", $location_id);
+$reviewImageStmt->execute();
+$reviewImageResult = $reviewImageStmt->get_result();
+while ($reviewImage = $reviewImageResult->fetch_assoc()) {
+    $reviewImages[(int)$reviewImage['review_id']][] = $reviewImage['image_url'];
+}
+
 $ratingStmt = $conn->prepare("
     SELECT COUNT(*) review_count, ROUND(AVG(rating),1) average_rating
     FROM location_reviews
@@ -468,6 +483,10 @@ body {
 .rating-stars input:checked ~ label { color: #ffc107; }
 .review-stars { color: #ffc107; letter-spacing: 2px; }
 .review-item { border-bottom: 1px solid #edf0ee; padding: 18px 0; }
+.review-photo-grid { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+.review-photo-thumb { width:110px; height:90px; object-fit:cover; border-radius:10px; cursor:zoom-in; transition:.2s; }
+.review-photo-thumb:hover { transform:scale(1.03); }
+.review-full-image { max-width:100%; max-height:78vh; object-fit:contain; }
 .review-item:last-child { border-bottom: 0; }
 
 /* =====================================================
@@ -1022,9 +1041,9 @@ require_once("includes/navbar.php");
             </div>
             <div class="mb-3">
                 <label class="form-label fw-semibold">📷 Ảnh trải nghiệm <span class="text-muted fw-normal">(không bắt buộc)</span></label>
-                <input type="file" name="review_image" id="reviewImageInput" class="form-control" accept="image/jpeg,image/png,image/webp">
-                <div class="form-text">JPG, PNG hoặc WEBP, tối đa 5 MB.</div>
-                <img id="reviewImagePreview" class="mt-3 rounded-3 d-none" alt="Xem trước ảnh đánh giá" style="max-width:100%;max-height:240px;object-fit:cover;">
+                <input type="file" name="review_images[]" id="reviewImageInput" class="form-control" accept="image/jpeg,image/png,image/webp" multiple>
+                <div class="form-text">Có thể chọn tối đa 6 ảnh cùng lúc. JPG, PNG hoặc WEBP, tối đa 5 MB mỗi ảnh.</div>
+                <div id="reviewImagePreview" class="review-photo-grid"></div>
             </div>
             <button class="btn btn-success fw-semibold">Gửi đánh giá</button>
             <div class="small text-muted mt-2">Đánh giá sẽ được hiển thị sau khi quản trị viên duyệt.</div>
@@ -1044,8 +1063,19 @@ require_once("includes/navbar.php");
             </div>
             <div class="review-stars my-1"><?= str_repeat('★',(int)$review['rating']) ?><?= str_repeat('☆',5-(int)$review['rating']) ?></div>
             <div><?= nl2br(htmlspecialchars($review['comment'])) ?></div>
-            <?php if (!empty($review['review_image'])): ?>
-                <img src="<?= htmlspecialchars($review['review_image']) ?>" alt="Ảnh do khách tham quan chia sẻ" class="mt-3 rounded-3" style="width:100%;max-width:430px;max-height:300px;object-fit:cover;">
+            <?php
+                $photos = $reviewImages[(int)$review['review_id']] ?? [];
+                if (!$photos && !empty($review['review_image'])) $photos[] = $review['review_image'];
+            ?>
+            <?php if ($photos): ?>
+                <div class="review-photo-grid">
+                <?php foreach ($photos as $photo): ?>
+                    <img src="<?= htmlspecialchars($photo) ?>" alt="Ảnh trải nghiệm"
+                         class="review-photo-thumb"
+                         data-bs-toggle="modal" data-bs-target="#reviewPhotoModal"
+                         data-photo="<?= htmlspecialchars($photo) ?>">
+                <?php endforeach; ?>
+                </div>
             <?php endif; ?>
         </div>
     <?php endwhile; endif; ?>
@@ -1054,6 +1084,12 @@ require_once("includes/navbar.php");
 </div>
 </div>
 
+
+<div class="modal fade" id="reviewPhotoModal" tabindex="-1" aria-hidden="true">
+<div class="modal-dialog modal-xl modal-dialog-centered"><div class="modal-content bg-dark border-0">
+<div class="modal-header border-0"><h5 class="modal-title text-white">Ảnh trải nghiệm</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+<div class="modal-body text-center"><img id="reviewFullImage" class="review-full-image rounded-3" src="" alt="Ảnh trải nghiệm đầy đủ"></div>
+</div></div></div>
 
 <!-- =====================================================
      BẢN ĐỒ
@@ -1295,14 +1331,28 @@ const reviewImageInput = document.getElementById("reviewImageInput");
 if (reviewImageInput) {
     reviewImageInput.addEventListener("change", function () {
         const preview = document.getElementById("reviewImagePreview");
-        const file = this.files && this.files[0];
-        if (!file) {
-            preview.classList.add("d-none");
-            preview.removeAttribute("src");
+        preview.innerHTML = "";
+        const files = Array.from(this.files || []);
+        if (files.length > 6) {
+            alert("Mỗi đánh giá được chọn tối đa 6 ảnh.");
+            this.value = "";
             return;
         }
-        preview.src = URL.createObjectURL(file);
-        preview.classList.remove("d-none");
+        files.forEach(function(file) {
+            const img = document.createElement("img");
+            img.src = URL.createObjectURL(file);
+            img.className = "review-photo-thumb";
+            img.alt = "Xem trước ảnh";
+            preview.appendChild(img);
+        });
+    });
+}
+
+const reviewPhotoModal = document.getElementById("reviewPhotoModal");
+if (reviewPhotoModal) {
+    reviewPhotoModal.addEventListener("show.bs.modal", function(event) {
+        const trigger = event.relatedTarget;
+        document.getElementById("reviewFullImage").src = trigger.getAttribute("data-photo") || "";
     });
 }
 
