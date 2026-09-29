@@ -19,11 +19,11 @@ $rows=$conn->query("SELECT * FROM site_feedback ORDER BY (status='pending') DESC
 <!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Góp ý website</title><link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"></head>
 <body class="bg-light"><?php require_once("../includes/navbar.php"); ?>
-<div class="container py-4"><h2 class="fw-bold">💬 Góp ý website</h2><p class="text-muted">Theo dõi mức độ hài lòng và ý kiến cải thiện từ người sử dụng.</p>
+<div class="admin-page"><h2 class="fw-bold">💬 Góp ý website</h2><p class="text-muted">Theo dõi mức độ hài lòng và ý kiến cải thiện từ người sử dụng.</p>
 <div class="row g-3 mb-4">
 <?php foreach([["Tổng phản hồi",(int)($stats["total"]??0)],["Chờ duyệt",(int)($stats["pending_count"]??0)],["Đã duyệt",(int)($stats["approved_count"]??0)],["Hài lòng TB",($stats["average_rating"]??"—")." ⭐"]] as $x): ?>
-<div class="col-6 col-lg-3"><div class="card border-0 shadow-sm"><div class="card-body"><div class="text-muted"><?= $x[0] ?></div><h3><?= $x[1] ?></h3></div></div></div><?php endforeach; ?></div>
-<div class="card border-0 shadow-sm"><div class="table-responsive"><table class="table table-hover align-middle mb-0">
+<div class="col-6 col-lg-3"><div class="card admin-card admin-stat-card"><div class="card-body"><div class="text-muted"><?= $x[0] ?></div><h3><?= $x[1] ?></h3></div></div></div><?php endforeach; ?></div>
+<div class="card admin-card admin-table-card"><div class="table-responsive"><table class="table table-hover align-middle mb-0">
 <thead class="table-success"><tr><th>Khách</th><th>Nội dung góp ý</th><th>Sao</th><th>Nhận xét</th><th>Ngày</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody>
 <?php if($rows->num_rows===0): ?><tr><td colspan="7" class="text-center text-muted py-5">Chưa có góp ý.</td></tr>
 <?php else: while($row=$rows->fetch_assoc()): $status=$row["status"]; ?>
