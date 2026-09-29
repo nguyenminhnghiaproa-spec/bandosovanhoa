@@ -1,3 +1,4 @@
+<link rel="stylesheet" href="/bandosovanhoa/assets/css/admin-theme.css?v=1">
 <?php
 
 $currentAdminPage =
@@ -22,6 +23,7 @@ $adminName =
         bg-success
         shadow-sm
         no-print
+        admin-navbar
     "
 >
     <div class="container-fluid px-lg-4">
