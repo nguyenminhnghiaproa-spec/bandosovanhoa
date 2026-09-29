@@ -41,6 +41,18 @@ $sql = "
         l.latitude,
         l.longitude,
         c.category_name,
+        COALESCE((
+            SELECT ROUND(AVG(r.rating), 1)
+            FROM location_reviews r
+            WHERE r.location_id = l.location_id
+              AND r.status = 'approved'
+        ), 0) AS average_rating,
+        (
+            SELECT COUNT(*)
+            FROM location_reviews r2
+            WHERE r2.location_id = l.location_id
+              AND r2.status = 'approved'
+        ) AS review_count,
         (
             SELECT i.image_url
             FROM images i
@@ -52,7 +64,7 @@ $sql = "
     LEFT JOIN categories c ON l.category_id = c.category_id
     WHERE l.status = 'active'
       AND (" . implode(' OR ', $conditions) . ")
-    ORDER BY l.location_id DESC
+    ORDER BY average_rating DESC, review_count DESC, l.location_id DESC
     LIMIT ?
 ";
 
@@ -148,7 +160,7 @@ require_once("includes/navbar.php");
         <div>
             <div class="journey-small-title">GỢI Ý THEO CHỦ ĐỀ</div>
             <h2 class="fw-bold mb-1"><?= $themeInfo['icon'] ?> <?= htmlspecialchars($themeInfo['label'], ENT_QUOTES, 'UTF-8') ?></h2>
-            <div class="text-muted">Có <?= count($journeyLocations) ?> điểm trong hành trình gợi ý.</div>
+            <div class="text-muted">Có <?= count($journeyLocations) ?> điểm phù hợp · ưu tiên địa điểm được cộng đồng đánh giá tốt.</div>
         </div>
         <?php if (!empty($journeyLocations)): ?>
             <a href="map.php?journey=<?= urlencode($theme) ?>&stops=<?= $stopCount ?>&duration=<?= $duration ?>" class="btn btn-success btn-lg">
@@ -178,6 +190,14 @@ require_once("includes/navbar.php");
                                 <?= htmlspecialchars($location['category_name'] ?? 'Địa điểm', ENT_QUOTES, 'UTF-8') ?>
                             </span>
                             <h3><?= htmlspecialchars($location['name'], ENT_QUOTES, 'UTF-8') ?></h3>
+                            <?php if ((int)$location['review_count'] > 0): ?>
+                                <div class="mb-2">
+                                    <span class="text-warning fw-bold">⭐ <?= number_format((float)$location['average_rating'], 1) ?>/5</span>
+                                    <span class="text-muted small">(<?= (int)$location['review_count'] ?> đánh giá)</span>
+                                </div>
+                            <?php else: ?>
+                                <div class="text-muted small mb-2">Chưa có đánh giá</div>
+                            <?php endif; ?>
                             <p class="journey-address">📍 <?= htmlspecialchars($location['address'] ?: 'Chưa cập nhật địa chỉ', ENT_QUOTES, 'UTF-8') ?></p>
                             <p class="journey-desc"><?= htmlspecialchars($location['description'] ?: 'Thông tin địa điểm đang được cập nhật.', ENT_QUOTES, 'UTF-8') ?></p>
                             <div class="d-flex flex-wrap gap-2">
