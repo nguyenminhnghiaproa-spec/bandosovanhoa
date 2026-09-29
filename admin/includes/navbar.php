@@ -112,6 +112,19 @@ $adminName =
                 </a>
 
 
+                <!-- ĐÁNH GIÁ -->
+
+                <a
+                    class="nav-link
+                    <?= $currentAdminPage === 'reviews'
+                        ? 'active fw-semibold'
+                        : '' ?>"
+                    href="/bandosovanhoa/admin/reviews/index.php"
+                >
+                    ⭐ Đánh giá
+                </a>
+
+
                 <!-- XEM TRANG KHÁCH -->
 
                 <a
