@@ -26,63 +26,68 @@ if ($check->get_result()->num_rows === 0) {
     exit;
 }
 
-$imagePath = null;
+$files = $_FILES["review_images"] ?? null;
+$validFiles = [];
+$allowed = ["image/jpeg"=>"jpg", "image/png"=>"png", "image/webp"=>"webp"];
 
-if (isset($_FILES["review_image"]) && $_FILES["review_image"]["error"] !== UPLOAD_ERR_NO_FILE) {
-    if ($_FILES["review_image"]["error"] !== UPLOAD_ERR_OK) {
-        $_SESSION["review_error"] = "Không thể tải ảnh lên. Vui lòng thử lại.";
-        header("Location: location_detail.php?id=" . $locationId . "#reviews");
-        exit;
+if ($files && is_array($files["name"])) {
+    $selectedCount = 0;
+    foreach ($files["error"] as $error) {
+        if ($error !== UPLOAD_ERR_NO_FILE) $selectedCount++;
     }
-
-    if ($_FILES["review_image"]["size"] > 5 * 1024 * 1024) {
-        $_SESSION["review_error"] = "Ảnh đánh giá không được lớn hơn 5 MB.";
+    if ($selectedCount > 6) {
+        $_SESSION["review_error"] = "Mỗi đánh giá được tải tối đa 6 ảnh.";
         header("Location: location_detail.php?id=" . $locationId . "#reviews");
         exit;
     }
 
     $finfo = new finfo(FILEINFO_MIME_TYPE);
-    $mime = $finfo->file($_FILES["review_image"]["tmp_name"]);
-    $allowed = [
-        "image/jpeg" => "jpg",
-        "image/png" => "png",
-        "image/webp" => "webp"
-    ];
-
-    if (!isset($allowed[$mime])) {
-        $_SESSION["review_error"] = "Chỉ chấp nhận ảnh JPG, PNG hoặc WEBP.";
-        header("Location: location_detail.php?id=" . $locationId . "#reviews");
-        exit;
+    foreach ($files["name"] as $i => $originalName) {
+        if ($files["error"][$i] === UPLOAD_ERR_NO_FILE) continue;
+        if ($files["error"][$i] !== UPLOAD_ERR_OK || $files["size"][$i] > 5 * 1024 * 1024) {
+            $_SESSION["review_error"] = "Mỗi ảnh phải tải thành công và không lớn hơn 5 MB.";
+            header("Location: location_detail.php?id=" . $locationId . "#reviews");
+            exit;
+        }
+        $mime = $finfo->file($files["tmp_name"][$i]);
+        if (!isset($allowed[$mime])) {
+            $_SESSION["review_error"] = "Chỉ chấp nhận ảnh JPG, PNG hoặc WEBP.";
+            header("Location: location_detail.php?id=" . $locationId . "#reviews");
+            exit;
+        }
+        $validFiles[] = ["tmp"=>$files["tmp_name"][$i], "ext"=>$allowed[$mime]];
     }
-
-    $uploadDir = __DIR__ . "/uploads/reviews/";
-    if (!is_dir($uploadDir)) {
-        mkdir($uploadDir, 0755, true);
-    }
-
-    $fileName = "review_" . $locationId . "_" . bin2hex(random_bytes(8)) . "." . $allowed[$mime];
-    $target = $uploadDir . $fileName;
-
-    if (!move_uploaded_file($_FILES["review_image"]["tmp_name"], $target)) {
-        $_SESSION["review_error"] = "Không thể lưu ảnh đánh giá.";
-        header("Location: location_detail.php?id=" . $locationId . "#reviews");
-        exit;
-    }
-
-    $imagePath = "uploads/reviews/" . $fileName;
 }
 
-$stmt = $conn->prepare("INSERT INTO location_reviews (location_id, reviewer_name, rating, comment, review_image, status) VALUES (?, ?, ?, ?, ?, 'pending')");
-$stmt->bind_param("isiss", $locationId, $name, $rating, $comment, $imagePath);
+$stmt = $conn->prepare("INSERT INTO location_reviews (location_id, reviewer_name, rating, comment, status) VALUES (?, ?, ?, ?, 'pending')");
+$stmt->bind_param("isis", $locationId, $name, $rating, $comment);
 
 if (!$stmt->execute()) {
-    if ($imagePath && file_exists(__DIR__ . "/" . $imagePath)) {
-        unlink(__DIR__ . "/" . $imagePath);
-    }
     $_SESSION["review_error"] = "Không thể lưu đánh giá. Vui lòng thử lại.";
-} else {
-    $_SESSION["review_success"] = "Cảm ơn bạn! Đánh giá và hình ảnh đã được gửi, đang chờ quản trị viên duyệt.";
+    header("Location: location_detail.php?id=" . $locationId . "#reviews");
+    exit;
 }
 
+$reviewId = $conn->insert_id;
+$savedPaths = [];
+
+if ($validFiles) {
+    $uploadDir = __DIR__ . "/uploads/reviews/";
+    if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+
+    $imageStmt = $conn->prepare("INSERT INTO review_images (review_id, image_url) VALUES (?, ?)");
+    foreach ($validFiles as $file) {
+        $fileName = "review_" . $reviewId . "_" . bin2hex(random_bytes(8)) . "." . $file["ext"];
+        $target = $uploadDir . $fileName;
+        if (move_uploaded_file($file["tmp"], $target)) {
+            $path = "uploads/reviews/" . $fileName;
+            $imageStmt->bind_param("is", $reviewId, $path);
+            $imageStmt->execute();
+            $savedPaths[] = $path;
+        }
+    }
+}
+
+$_SESSION["review_success"] = "Cảm ơn bạn! Đánh giá" . ($savedPaths ? " và " . count($savedPaths) . " ảnh" : "") . " đã được gửi, đang chờ quản trị viên duyệt.";
 header("Location: location_detail.php?id=" . $locationId . "#reviews");
 exit;
