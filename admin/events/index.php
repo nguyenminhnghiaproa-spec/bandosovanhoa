@@ -520,15 +520,7 @@ require_once(
      THANH MENU QUẢN TRỊ - SỰ KIỆN
 ===================================================== -->
 
-<?php
 
-$currentAdminPage = 'events';
-
-require_once(
-    "../includes/navbar.php"
-);
-
-?>
 
 <!-- =====================================================
      NỘI DUNG
