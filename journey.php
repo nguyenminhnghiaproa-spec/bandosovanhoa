@@ -14,14 +14,6 @@ if (!isset($allowedThemes[$theme])) {
 }
 
 $themeInfo = $allowedThemes[$theme];
-
-$duration = (int)($_GET['duration'] ?? 180);
-if (!in_array($duration, [60, 120, 180, 240, 360], true)) {
-    $duration = 180;
-}
-
-$stopCount = (int)($_GET['stops'] ?? 3);
-$stopCount = max(1, min(6, $stopCount));
 $conditions = [];
 $params = [];
 $types = '';
@@ -41,18 +33,6 @@ $sql = "
         l.latitude,
         l.longitude,
         c.category_name,
-        COALESCE((
-            SELECT ROUND(AVG(r.rating), 1)
-            FROM location_reviews r
-            WHERE r.location_id = l.location_id
-              AND r.status = 'approved'
-        ), 0) AS average_rating,
-        (
-            SELECT COUNT(*)
-            FROM location_reviews r2
-            WHERE r2.location_id = l.location_id
-              AND r2.status = 'approved'
-        ) AS review_count,
         (
             SELECT i.image_url
             FROM images i
@@ -64,12 +44,9 @@ $sql = "
     LEFT JOIN categories c ON l.category_id = c.category_id
     WHERE l.status = 'active'
       AND (" . implode(' OR ', $conditions) . ")
-    ORDER BY average_rating DESC, review_count DESC, l.location_id DESC
-    LIMIT ?
+    ORDER BY l.location_id DESC
+    LIMIT 6
 ";
-
-$params[] = $stopCount;
-$types .= 'i';
 
 $stmt = $conn->prepare($sql);
 if (!empty($params)) {
@@ -108,7 +85,7 @@ require_once("includes/navbar.php");
 <section class="journey-content py-5">
 <div class="container">
 
-    <div class="journey-theme-panel mb-4">
+    <div class="journey-theme-panel mb-5">
         <div class="text-center mb-4">
             <span class="journey-small-title">BẠN MUỐN KHÁM PHÁ GÌ?</span>
             <h2 class="fw-bold mt-2">Chọn một hành trình</h2>
@@ -127,43 +104,14 @@ require_once("includes/navbar.php");
         </div>
     </div>
 
-    <div class="card border-0 shadow-sm rounded-4 mb-5">
-        <div class="card-body p-4">
-            <div class="journey-small-title mb-2">CÁ NHÂN HÓA HÀNH TRÌNH</div>
-            <h3 class="fw-bold mb-3">⏱️ Bạn có bao nhiêu thời gian?</h3>
-            <form method="get" class="row g-3 align-items-end">
-                <input type="hidden" name="theme" value="<?= htmlspecialchars($theme) ?>">
-                <div class="col-md-6">
-                    <label class="form-label fw-semibold">Thời gian khám phá</label>
-                    <select name="duration" class="form-select">
-                        <?php foreach ([60=>'1 giờ',120=>'2 giờ',180=>'3 giờ',240=>'4 giờ',360=>'Cả buổi (~6 giờ)'] as $minutes=>$label): ?>
-                            <option value="<?= $minutes ?>" <?= $duration===$minutes?'selected':'' ?>><?= $label ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label fw-semibold">Số điểm muốn tham quan</label>
-                    <select name="stops" class="form-select">
-                        <?php for($i=1;$i<=6;$i++): ?>
-                            <option value="<?= $i ?>" <?= $stopCount===$i?'selected':'' ?>><?= $i ?> điểm</option>
-                        <?php endfor; ?>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <button class="btn btn-success w-100">✨ Gợi ý</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
         <div>
             <div class="journey-small-title">GỢI Ý THEO CHỦ ĐỀ</div>
             <h2 class="fw-bold mb-1"><?= $themeInfo['icon'] ?> <?= htmlspecialchars($themeInfo['label'], ENT_QUOTES, 'UTF-8') ?></h2>
-            <div class="text-muted">Có <?= count($journeyLocations) ?> điểm phù hợp · ưu tiên địa điểm được cộng đồng đánh giá tốt.</div>
+            <div class="text-muted">Có <?= count($journeyLocations) ?> điểm trong hành trình gợi ý.</div>
         </div>
         <?php if (!empty($journeyLocations)): ?>
-            <a href="map.php?journey=<?= urlencode($theme) ?>&stops=<?= $stopCount ?>&duration=<?= $duration ?>" class="btn btn-success btn-lg">
+            <a href="map.php?journey=<?= urlencode($theme) ?>" class="btn btn-success btn-lg">
                 🗺️ Xem toàn bộ hành trình trên bản đồ
             </a>
         <?php endif; ?>
@@ -190,14 +138,6 @@ require_once("includes/navbar.php");
                                 <?= htmlspecialchars($location['category_name'] ?? 'Địa điểm', ENT_QUOTES, 'UTF-8') ?>
                             </span>
                             <h3><?= htmlspecialchars($location['name'], ENT_QUOTES, 'UTF-8') ?></h3>
-                            <?php if ((int)$location['review_count'] > 0): ?>
-                                <div class="mb-2">
-                                    <span class="text-warning fw-bold">⭐ <?= number_format((float)$location['average_rating'], 1) ?>/5</span>
-                                    <span class="text-muted small">(<?= (int)$location['review_count'] ?> đánh giá)</span>
-                                </div>
-                            <?php else: ?>
-                                <div class="text-muted small mb-2">Chưa có đánh giá</div>
-                            <?php endif; ?>
                             <p class="journey-address">📍 <?= htmlspecialchars($location['address'] ?: 'Chưa cập nhật địa chỉ', ENT_QUOTES, 'UTF-8') ?></p>
                             <p class="journey-desc"><?= htmlspecialchars($location['description'] ?: 'Thông tin địa điểm đang được cập nhật.', ENT_QUOTES, 'UTF-8') ?></p>
                             <div class="d-flex flex-wrap gap-2">
