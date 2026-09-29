@@ -952,10 +952,19 @@ require_once("includes/navbar.php");
 <button
     type="button"
     class="btn btn-primary"
-    onclick="openDirections(latitude, longitude)"
+    onclick="showRouteOnMap()"
 >
-    🚗 Chỉ đường
+    🧭 Chỉ đường ngay trên bản đồ
 </button>
+
+<a
+    href="https://www.google.com/maps/dir/?api=1&destination=<?= urlencode($latitude . ',' . $longitude) ?>&travelmode=driving"
+    target="_blank"
+    rel="noopener noreferrer"
+    class="btn btn-outline-primary"
+>
+    ↗ Mở Google Maps
+</a>
 
 
 </div>
@@ -1149,36 +1158,6 @@ require_once("includes/navbar.php");
 <script>
 
 /* =====================================================
-   CHỈ ĐƯỜNG
-   - Điện thoại: mở Google Maps/app bản đồ khi trình duyệt hỗ trợ.
-   - Máy tính: mở Google Maps trên tab mới.
-   - Google Maps tự dùng vị trí hiện tại làm điểm xuất phát.
-===================================================== */
-function openDirections(lat, lng) {
-    lat = Number(lat);
-    lng = Number(lng);
-
-    if (!Number.isFinite(lat) || !Number.isFinite(lng) ||
-        (lat === 0 && lng === 0)) {
-        alert("Địa điểm này chưa có tọa độ hợp lệ để chỉ đường.");
-        return false;
-    }
-
-    var url =
-        "https://www.google.com/maps/dir/?api=1" +
-        "&destination=" + encodeURIComponent(lat + "," + lng) +
-        "&travelmode=driving";
-
-    var opened = window.open(url, "_blank", "noopener,noreferrer");
-
-    if (!opened) {
-        window.location.href = url;
-    }
-
-    return false;
-}
-
-/* =====================================================
    BẢN ĐỒ
 ===================================================== */
 
@@ -1228,6 +1207,102 @@ L.marker(
     locationName
 )
 .openPopup();
+
+let detailRouteLine = null;
+let detailUserMarker = null;
+
+/* =====================================================
+   CHỈ ĐƯỜNG NGAY TRÊN WEBSITE
+===================================================== */
+async function showRouteOnMap() {
+    if (!navigator.geolocation) {
+        alert("Trình duyệt của bạn không hỗ trợ định vị.");
+        return;
+    }
+
+    const button = document.querySelector('[onclick="showRouteOnMap()"]');
+    if (button) {
+        button.disabled = true;
+        button.innerHTML = "⏳ Đang xác định vị trí...";
+    }
+
+    navigator.geolocation.getCurrentPosition(
+        async function(position) {
+            try {
+                const userLat = position.coords.latitude;
+                const userLng = position.coords.longitude;
+
+                if (detailRouteLine) map.removeLayer(detailRouteLine);
+                if (detailUserMarker) map.removeLayer(detailUserMarker);
+
+                detailUserMarker = L.marker([userLat, userLng])
+                    .addTo(map)
+                    .bindPopup("<strong>📍 Vị trí của bạn</strong>");
+
+                const routeUrl =
+                    "https://router.project-osrm.org/route/v1/driving/" +
+                    userLng + "," + userLat + ";" +
+                    longitude + "," + latitude +
+                    "?overview=full&geometries=geojson&steps=false";
+
+                const response = await fetch(routeUrl);
+                if (!response.ok) throw new Error("Không thể kết nối dịch vụ chỉ đường.");
+
+                const data = await response.json();
+                if (data.code !== "Ok" || !data.routes || !data.routes.length) {
+                    throw new Error("Không tìm thấy tuyến đường phù hợp.");
+                }
+
+                const route = data.routes[0];
+                const points = route.geometry.coordinates.map(function(point) {
+                    return [point[1], point[0]];
+                });
+
+                detailRouteLine = L.polyline(points, {
+                    weight: 6,
+                    opacity: 0.85
+                }).addTo(map);
+
+                map.fitBounds(detailRouteLine.getBounds(), { padding: [35, 35] });
+
+                const km = (route.distance / 1000).toFixed(1);
+                const minutes = Math.max(1, Math.round(route.duration / 60));
+
+                detailUserMarker
+                    .bindPopup(
+                        "<strong>📍 Vị trí của bạn</strong><br>" +
+                        "🚗 Khoảng " + km + " km · " + minutes + " phút"
+                    )
+                    .openPopup();
+            } catch (error) {
+                alert(error.message || "Không thể tạo tuyến đường.");
+            } finally {
+                if (button) {
+                    button.disabled = false;
+                    button.innerHTML = "🧭 Chỉ đường ngay trên bản đồ";
+                }
+            }
+        },
+        function(error) {
+            if (button) {
+                button.disabled = false;
+                button.innerHTML = "🧭 Chỉ đường ngay trên bản đồ";
+            }
+
+            if (error.code === 1) {
+                alert("Bạn cần cho phép truy cập vị trí để chỉ đường ngay trên website.");
+            } else {
+                alert("Không xác định được vị trí hiện tại của bạn.");
+            }
+        },
+        {
+            enableHighAccuracy: true,
+            timeout: 12000,
+            maximumAge: 15000
+        }
+    );
+}
+
 
 
 
