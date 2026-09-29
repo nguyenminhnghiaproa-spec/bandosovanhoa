@@ -115,6 +115,19 @@ $currentPage =
                 </a>
 
 
+                <!-- GÓP Ý WEBSITE -->
+
+                <a
+                    class="nav-link
+                    <?= $currentPage === 'feedback'
+                        ? 'active fw-semibold'
+                        : '' ?>"
+                    href="/bandosovanhoa/feedback.php"
+                >
+                    ⭐ Góp ý
+                </a>
+
+
                 <!-- BẢN ĐỒ -->
 
                 <a
