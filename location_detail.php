@@ -949,18 +949,13 @@ require_once("includes/navbar.php");
 </h4>
 
 
-<a
-    target="_blank"
-    rel="noopener noreferrer"
-    href="https://www.google.com/maps/dir/?api=1&destination=<?= urlencode(
-        $latitude . ',' . $longitude
-    ) ?>"
+<button
+    type="button"
     class="btn btn-primary"
+    onclick="openDirections(latitude, longitude)"
 >
-
     🚗 Chỉ đường
-
-</a>
+</button>
 
 
 </div>
@@ -1152,6 +1147,36 @@ require_once("includes/navbar.php");
 
 
 <script>
+
+/* =====================================================
+   CHỈ ĐƯỜNG
+   - Điện thoại: mở Google Maps/app bản đồ khi trình duyệt hỗ trợ.
+   - Máy tính: mở Google Maps trên tab mới.
+   - Google Maps tự dùng vị trí hiện tại làm điểm xuất phát.
+===================================================== */
+function openDirections(lat, lng) {
+    lat = Number(lat);
+    lng = Number(lng);
+
+    if (!Number.isFinite(lat) || !Number.isFinite(lng) ||
+        (lat === 0 && lng === 0)) {
+        alert("Địa điểm này chưa có tọa độ hợp lệ để chỉ đường.");
+        return false;
+    }
+
+    var url =
+        "https://www.google.com/maps/dir/?api=1" +
+        "&destination=" + encodeURIComponent(lat + "," + lng) +
+        "&travelmode=driving";
+
+    var opened = window.open(url, "_blank", "noopener,noreferrer");
+
+    if (!opened) {
+        window.location.href = url;
+    }
+
+    return false;
+}
 
 /* =====================================================
    BẢN ĐỒ
