@@ -2281,11 +2281,6 @@ if (categoryFromUrl) {
 ===================================================== */
 
 var journeyFromUrl = urlParams.get("journey");
-var journeyStopCount = parseInt(urlParams.get("stops"), 10);
-if (!Number.isInteger(journeyStopCount) || journeyStopCount < 1 || journeyStopCount > 6) {
-    journeyStopCount = 6;
-}
-var journeyDuration = parseInt(urlParams.get("duration"), 10) || 180;
 var journeyLine = null;
 var journeyInfoControl = null;
 
@@ -2340,7 +2335,7 @@ function getJourneyMarkers(themeKey) {
         .sort(function(a, b) {
             return b.id - a.id;
         })
-        .slice(0, journeyStopCount);
+        .slice(0, 6);
 }
 
 function requestCurrentPosition() {
