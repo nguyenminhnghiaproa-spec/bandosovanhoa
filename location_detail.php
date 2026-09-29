@@ -3,6 +3,10 @@
 include("config/database.php");
 include("config/app.php");
 
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 /* =====================================================
    KIỂM TRA ID
 ===================================================== */
@@ -128,6 +132,36 @@ $eventStmt->execute();
 
 $events =
     $eventStmt->get_result();
+
+
+/* =====================================================
+   ĐÁNH GIÁ ĐỊA ĐIỂM
+===================================================== */
+
+$reviewStmt = $conn->prepare("
+    SELECT review_id, reviewer_name, rating, comment, created_at
+    FROM location_reviews
+    WHERE location_id = ? AND status = 'approved'
+    ORDER BY created_at DESC
+");
+$reviewStmt->bind_param("i", $location_id);
+$reviewStmt->execute();
+$reviews = $reviewStmt->get_result();
+
+$ratingStmt = $conn->prepare("
+    SELECT COUNT(*) review_count, ROUND(AVG(rating),1) average_rating
+    FROM location_reviews
+    WHERE location_id = ? AND status = 'approved'
+");
+$ratingStmt->bind_param("i", $location_id);
+$ratingStmt->execute();
+$ratingSummary = $ratingStmt->get_result()->fetch_assoc();
+$reviewCount = (int)($ratingSummary['review_count'] ?? 0);
+$averageRating = $reviewCount > 0 ? (float)$ratingSummary['average_rating'] : 0;
+
+$reviewSuccess = $_SESSION['review_success'] ?? '';
+$reviewError = $_SESSION['review_error'] ?? '';
+unset($_SESSION['review_success'], $_SESSION['review_error']);
 
 
 /* =====================================================
@@ -415,6 +449,26 @@ body {
 
 }
 
+
+.rating-stars {
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+    gap: 4px;
+}
+.rating-stars input { display: none; }
+.rating-stars label {
+    font-size: 34px;
+    color: #ced4da;
+    cursor: pointer;
+    line-height: 1;
+}
+.rating-stars label:hover,
+.rating-stars label:hover ~ label,
+.rating-stars input:checked ~ label { color: #ffc107; }
+.review-stars { color: #ffc107; letter-spacing: 2px; }
+.review-item { border-bottom: 1px solid #edf0ee; padding: 18px 0; }
+.review-item:last-child { border-bottom: 0; }
 
 /* =====================================================
    MOBILE
@@ -919,6 +973,77 @@ require_once("includes/navbar.php");
 
 <?php endif; ?>
 
+
+
+<!-- =====================================================
+     ĐÁNH GIÁ ĐỊA ĐIỂM
+===================================================== -->
+
+<div class="card info-card" id="reviews">
+<div class="card-body p-4">
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <h4 class="section-title mb-1">⭐ Đánh giá địa điểm</h4>
+        <?php if ($reviewCount > 0): ?>
+            <div><strong class="fs-4"><?= number_format($averageRating,1) ?>/5</strong>
+            <span class="review-stars"><?= str_repeat('★', (int)round($averageRating)) ?><?= str_repeat('☆', 5-(int)round($averageRating)) ?></span>
+            <span class="text-muted">(<?= $reviewCount ?> lượt đánh giá đã duyệt)</span></div>
+        <?php else: ?>
+            <div class="text-muted">Chưa có đánh giá công khai. Hãy là người đầu tiên chia sẻ cảm nhận.</div>
+        <?php endif; ?>
+    </div>
+</div>
+
+<?php if ($reviewSuccess): ?><div class="alert alert-success"><?= htmlspecialchars($reviewSuccess) ?></div><?php endif; ?>
+<?php if ($reviewError): ?><div class="alert alert-danger"><?= htmlspecialchars($reviewError) ?></div><?php endif; ?>
+
+<div class="row g-4">
+<div class="col-lg-5">
+    <div class="p-3 bg-light rounded-4">
+        <h5 class="fw-bold mb-3">Chia sẻ trải nghiệm của bạn</h5>
+        <form action="review_submit.php" method="post">
+            <input type="hidden" name="location_id" value="<?= (int)$location_id ?>">
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Tên của bạn</label>
+                <input type="text" name="reviewer_name" class="form-control" maxlength="100" required placeholder="Ví dụ: Nguyễn Văn A">
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-semibold d-block">Mức đánh giá</label>
+                <div class="rating-stars" aria-label="Chọn số sao">
+                    <?php for($star=5;$star>=1;$star--): ?>
+                        <input type="radio" name="rating" id="star<?= $star ?>" value="<?= $star ?>" <?= $star===5?'required':'' ?>>
+                        <label for="star<?= $star ?>" title="<?= $star ?> sao">★</label>
+                    <?php endfor; ?>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Nhận xét</label>
+                <textarea name="comment" class="form-control" rows="4" maxlength="1500" required placeholder="Bạn ấn tượng điều gì ở địa điểm này?"></textarea>
+            </div>
+            <button class="btn btn-success fw-semibold">Gửi đánh giá</button>
+            <div class="small text-muted mt-2">Đánh giá sẽ được hiển thị sau khi quản trị viên duyệt.</div>
+        </form>
+    </div>
+</div>
+
+<div class="col-lg-7">
+    <h5 class="fw-bold mb-2">Nhận xét từ khách tham quan</h5>
+    <?php if ($reviews->num_rows === 0): ?>
+        <div class="text-muted py-4">Chưa có nhận xét nào được duyệt.</div>
+    <?php else: while($review=$reviews->fetch_assoc()): ?>
+        <div class="review-item">
+            <div class="d-flex justify-content-between gap-2 flex-wrap">
+                <strong><?= htmlspecialchars($review['reviewer_name']) ?></strong>
+                <span class="small text-muted"><?= date('d/m/Y',strtotime($review['created_at'])) ?></span>
+            </div>
+            <div class="review-stars my-1"><?= str_repeat('★',(int)$review['rating']) ?><?= str_repeat('☆',5-(int)$review['rating']) ?></div>
+            <div><?= nl2br(htmlspecialchars($review['comment'])) ?></div>
+        </div>
+    <?php endwhile; endif; ?>
+</div>
+</div>
+</div>
+</div>
 
 
 <!-- =====================================================
